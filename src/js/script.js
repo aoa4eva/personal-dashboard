@@ -503,7 +503,19 @@ class DraggableWidget {
     loadPosition() {
         const id = this.element.id || this.element.className.split(' ')[0];
         const saved = localStorage.getItem(`widget-position-${id}`);
-        return saved ? JSON.parse(saved) : null;
+        if (!saved) return null;
+
+        const position = JSON.parse(saved);
+
+        // For quote section, always recalculate X to keep it centered
+        if (this.element.classList.contains('quote-section')) {
+            const container = document.querySelector('.main-container');
+            const containerRect = container.getBoundingClientRect();
+            const elementRect = this.element.getBoundingClientRect();
+            position.x = (containerRect.width - elementRect.width) / 2;
+        }
+
+        return position;
     }
 }
 
