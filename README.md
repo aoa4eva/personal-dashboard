@@ -1,7 +1,8 @@
 # A simple bootstrap template for project quick starts 
 
 # What it is: 
-A simple bootstsrap template that can serve as a basic template.
+A simple boostrap starter template.
+
 ![img.png](img.png)
 
 
