@@ -393,7 +393,9 @@ function parseVoiceCommand(transcript) {
     }
 
     // Pattern 1: Specific time with optional minutes "3:30 pm", "3 pm", "3:30"
-    const timePattern = /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?\b/i;
+    const timePattern = /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?(?=[\s\.,!?]|$)/i;
+
+//    const timePattern = /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?\b/i;
     const timeMatch = text.match(timePattern);
 
     if (timeMatch) {
