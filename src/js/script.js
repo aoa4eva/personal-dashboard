@@ -71,33 +71,168 @@ function displayQuote() {
     document.getElementById('quote-author').textContent = `- ${randomQuote.author}`;
 }
 
+// Weather widget functions
+async function fetchWeather() {
+    const apiToken = localStorage.getItem('weatherApiToken');
+    const location = localStorage.getItem('weatherLocation');
+    const unit = localStorage.getItem('weatherUnit') || 'metric'; // Default to Celsius
+
+    console.log('Weather widget: Checking settings...', { apiToken: apiToken ? 'SET' : 'NOT SET', location, unit });
+
+    const weatherWidget = document.getElementById('weather-widget');
+    const weatherContent = weatherWidget.querySelector('.weather-content');
+    const weatherError = document.getElementById('weather-error');
+
+    // Hide widget if no API token
+    if (!apiToken || apiToken.trim() === '') {
+        console.log('Weather widget: No API token, hiding widget');
+        weatherWidget.classList.add('hidden');
+        return;
+    }
+
+    // Hide widget if no location
+    if (!location || location.trim() === '') {
+        console.log('Weather widget: No location, hiding widget');
+        weatherWidget.classList.add('hidden');
+        return;
+    }
+
+    // Show widget
+    console.log('Weather widget: Showing widget and fetching weather...');
+    weatherWidget.classList.remove('hidden');
+
+    try {
+        const response = await fetch(
+            `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(location)}&appid=${apiToken}&units=${unit}`
+        );
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                throw new Error('Invalid API token. Please check your API key.');
+            } else if (response.status === 404) {
+                throw new Error('City not found. Please check the city name.');
+            } else {
+                throw new Error(`Weather API error: ${response.status}`);
+            }
+        }
+
+        const data = await response.json();
+        console.log('Weather widget: API response received', data);
+
+        // Determine unit symbol
+        const unitSymbol = unit === 'imperial' ? '°F' : '°C';
+
+        // Update weather display
+        document.getElementById('weather-temp').textContent = `${Math.round(data.main.temp)}${unitSymbol}`;
+        document.getElementById('weather-description').textContent = data.weather[0].description;
+        document.getElementById('weather-location').textContent = data.name;
+
+        // Set weather icon (using emoji for simplicity)
+        const iconCode = data.weather[0].main.toLowerCase();
+        const weatherIcon = document.getElementById('weather-icon');
+        const iconMap = {
+            'clear': '☀️',
+            'clouds': '☁️',
+            'rain': '🌧️',
+            'drizzle': '🌦️',
+            'thunderstorm': '⛈️',
+            'snow': '❄️',
+            'mist': '🌫️',
+            'fog': '🌫️',
+            'haze': '🌫️'
+        };
+        weatherIcon.textContent = iconMap[iconCode] || '🌤️';
+
+        // Show content, hide error
+        weatherContent.classList.remove('hidden');
+        weatherError.classList.add('hidden');
+        console.log('Weather widget: Display updated successfully');
+
+    } catch (error) {
+        // Show error message
+        weatherError.textContent = `⚠️ ${error.message}`;
+        weatherError.classList.remove('hidden');
+        weatherContent.classList.add('hidden');
+        console.error('Weather fetch error:', error);
+    }
+}
+
+// Initialize weather widget
+function initWeather() {
+    fetchWeather();
+    // Refresh weather every 10 minutes
+    setInterval(fetchWeather, 600000);
+}
+
 // Initialize settings modal
 function initSettings() {
     const settingsModal = document.getElementById('settingsModal');
     const userNameInput = document.getElementById('user-name-input');
+    const weatherApiTokenInput = document.getElementById('weather-api-token');
+    const weatherLocationInput = document.getElementById('weather-location-input');
     const saveButton = document.getElementById('save-settings');
 
-    // Load current name when modal opens
+    // Load current settings when modal opens
     settingsModal.addEventListener('show.bs.modal', () => {
         const savedName = localStorage.getItem('userName');
-        if (savedName) {
-            userNameInput.value = savedName;
+        const savedApiToken = localStorage.getItem('weatherApiToken');
+        const savedLocation = localStorage.getItem('weatherLocation');
+        const savedUnit = localStorage.getItem('weatherUnit') || 'metric';
+
+        userNameInput.value = savedName || '';
+        weatherApiTokenInput.value = savedApiToken || '';
+        weatherLocationInput.value = savedLocation || '';
+
+        // Set temperature unit radio button
+        if (savedUnit === 'imperial') {
+            document.getElementById('unit-fahrenheit').checked = true;
         } else {
-            userNameInput.value = '';
+            document.getElementById('unit-celsius').checked = true;
         }
     });
 
     // Save settings
-    saveButton.addEventListener('click', () => {
-        const name = userNameInput.value.trim();
+    saveButton.addEventListener('click', (e) => {
+        e.preventDefault(); // Prevent form submission
 
+        const name = userNameInput.value.trim();
+        const apiToken = weatherApiTokenInput.value.trim();
+        const location = weatherLocationInput.value.trim();
+        const unit = document.querySelector('input[name="temperature-unit"]:checked').value;
+
+        console.log('Save button clicked. Values:', { name, apiToken: apiToken ? 'SET' : 'EMPTY', location, unit });
+
+        // Save or remove user name
         if (name !== '') {
             localStorage.setItem('userName', name);
-            updateGreeting();
         } else {
             localStorage.removeItem('userName');
-            updateGreeting();
         }
+        updateGreeting();
+
+        // Save or remove weather API token
+        if (apiToken !== '') {
+            localStorage.setItem('weatherApiToken', apiToken);
+        } else {
+            localStorage.removeItem('weatherApiToken');
+        }
+
+        // Save or remove weather location
+        if (location !== '') {
+            localStorage.setItem('weatherLocation', location);
+            console.log('Settings saved: Location set to', location);
+        } else {
+            localStorage.removeItem('weatherLocation');
+            console.log('Settings saved: Location removed');
+        }
+
+        // Save temperature unit
+        localStorage.setItem('weatherUnit', unit);
+        console.log('Settings saved: Temperature unit set to', unit);
+
+        // Refresh weather widget
+        console.log('Refreshing weather widget after settings save...');
+        fetchWeather();
 
         // Close modal
         const modal = bootstrap.Modal.getInstance(settingsModal);
@@ -105,12 +240,16 @@ function initSettings() {
     });
 
     // Save on Enter key
-    userNameInput.addEventListener('keypress', (e) => {
+    const handleEnter = (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             saveButton.click();
         }
-    });
+    };
+
+    userNameInput.addEventListener('keypress', handleEnter);
+    weatherApiTokenInput.addEventListener('keypress', handleEnter);
+    weatherLocationInput.addEventListener('keypress', handleEnter);
 }
 
 // Initialize navbar
@@ -161,6 +300,7 @@ function init() {
     displayQuote();
     initSettings();
     initNavbar();
+    initWeather();
 }
 
 // Start when DOM is loaded

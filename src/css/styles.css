@@ -143,6 +143,68 @@ body::before {
     font-weight: 300;
 }
 
+/* Weather Widget */
+.weather-widget {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px 30px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    min-width: 280px;
+    max-width: 400px;
+    animation: fadeIn 0.8s ease-out;
+}
+
+.weather-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+
+.weather-icon {
+    font-size: 64px;
+    line-height: 1;
+}
+
+.weather-info {
+    text-align: left;
+}
+
+.weather-temp {
+    font-size: 36px;
+    font-weight: 300;
+    line-height: 1.2;
+}
+
+.weather-description {
+    font-size: 18px;
+    font-weight: 300;
+    text-transform: capitalize;
+    opacity: 0.9;
+    margin-top: 4px;
+}
+
+.weather-location {
+    font-size: 16px;
+    font-weight: 300;
+    opacity: 0.8;
+    margin-top: 4px;
+}
+
+.weather-error {
+    font-size: 16px;
+    font-weight: 300;
+    color: #ff6b6b;
+    padding: 10px;
+    background: rgba(255, 107, 107, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
 /* Quote Section */
 .quote-section {
     position: absolute;
@@ -310,6 +372,27 @@ body::before {
     .quote-author {
         font-size: 14px;
     }
+
+    .weather-widget {
+        min-width: 240px;
+        padding: 16px 20px;
+    }
+
+    .weather-icon {
+        font-size: 48px;
+    }
+
+    .weather-temp {
+        font-size: 28px;
+    }
+
+    .weather-description {
+        font-size: 16px;
+    }
+
+    .weather-location {
+        font-size: 14px;
+    }
 }
 
 /* Small devices adjustments */
@@ -337,5 +420,34 @@ body::before {
 
     .page-footer p {
         font-size: 12px;
+    }
+
+    .weather-widget {
+        min-width: 200px;
+        padding: 14px 16px;
+    }
+
+    .weather-content {
+        gap: 12px;
+    }
+
+    .weather-icon {
+        font-size: 40px;
+    }
+
+    .weather-temp {
+        font-size: 24px;
+    }
+
+    .weather-description {
+        font-size: 14px;
+    }
+
+    .weather-location {
+        font-size: 12px;
+    }
+
+    .weather-error {
+        font-size: 14px;
     }
 }
