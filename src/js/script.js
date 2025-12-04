@@ -169,6 +169,7 @@ function initWeather() {
 let alarmCheckInterval = null;
 let alarmSoundInterval = null;
 let currentAlarmAudio = null;
+let currentDisplayedAlarm = null;
 
 // Generate default beep sound using Web Audio API (persistent version)
 function generateDefaultBeep() {
@@ -386,16 +387,43 @@ function parseVoiceCommand(transcript) {
         }
     }
 
+    // Pattern 1: Relative time "5 minutes from now", "2 hours from now", "in 5 minutes", "in 1 hour"
+    // Check this FIRST before checking for specific times to avoid "in 1 minute" being parsed as "1 AM"
+    const relativePattern = /(?:in\s+)?(\d+)\s+(minute|minutes|hour|hours)(?:\s+from\s+now)?/i;
+    const relativeMatch = text.match(relativePattern);
+
+    if (relativeMatch) {
+        const amount = parseInt(relativeMatch[1]);
+        const unit = relativeMatch[2].toLowerCase();
+
+        const targetDate = new Date();
+        if (unit.startsWith('minute')) {
+            targetDate.setMinutes(targetDate.getMinutes() + amount);
+        } else if (unit.startsWith('hour')) {
+            targetDate.setHours(targetDate.getHours() + amount);
+        }
+
+        const hours = targetDate.getHours();
+        const minutes = targetDate.getMinutes();
+        const displayMeridiem = hours >= 12 ? 'pm' : 'am';
+
+        return {
+            date: targetDate.toISOString().split('T')[0],
+            time: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`,
+            label: label || `In ${amount} ${unit}`,
+            displayTime: formatAlarmTime(`${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`),
+            displayDate: formatAlarmDate(targetDate.toISOString().split('T')[0])
+        };
+    }
+
     // Extract AM/PM
     const ampmMatch = text.match(/\b(am|pm|a\.m\.|p\.m\.)\b/i);
     if (ampmMatch) {
         meridiem = ampmMatch[1].toLowerCase().replace(/\./g, '');
     }
 
-    // Pattern 1: Specific time with optional minutes "3:30 pm", "3 pm", "3:30"
+    // Pattern 2: Specific time with optional minutes "3:30 pm", "3 pm", "3:30"
     const timePattern = /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?(?=[\s\.,!?]|$)/i;
-
-//    const timePattern = /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?\b/i;
     const timeMatch = text.match(timePattern);
 
     if (timeMatch) {
@@ -422,34 +450,6 @@ function parseVoiceCommand(transcript) {
 
             parsedTime = { hours, minutes, meridiem: timeMeridiem };
         }
-    }
-
-    // Pattern 2: Relative time "5 minutes from now", "2 hours from now"
-    const relativePattern = /(\d+)\s+(minute|minutes|hour|hours)\s+from\s+now/i;
-    const relativeMatch = text.match(relativePattern);
-
-    if (relativeMatch) {
-        const amount = parseInt(relativeMatch[1]);
-        const unit = relativeMatch[2].toLowerCase();
-
-        const targetDate = new Date();
-        if (unit.startsWith('minute')) {
-            targetDate.setMinutes(targetDate.getMinutes() + amount);
-        } else if (unit.startsWith('hour')) {
-            targetDate.setHours(targetDate.getHours() + amount);
-        }
-
-        const hours = targetDate.getHours();
-        const minutes = targetDate.getMinutes();
-        const displayMeridiem = hours >= 12 ? 'pm' : 'am';
-
-        return {
-            date: targetDate.toISOString().split('T')[0],
-            time: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`,
-            label: label || `In ${amount} ${unit}`,
-            displayTime: formatAlarmTime(`${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`),
-            displayDate: formatAlarmDate(targetDate.toISOString().split('T')[0])
-        };
     }
 
     // Parse date
@@ -683,6 +683,9 @@ function showAlarmNotification(alarm) {
         labelEl.style.opacity = '0.7';
     }
 
+    // Store reference to currently displayed alarm
+    currentDisplayedAlarm = alarm;
+
     notification.classList.remove('hidden');
 }
 
@@ -691,6 +694,12 @@ function dismissAlarmNotification() {
     const notification = document.getElementById('alarm-notification');
     notification.classList.add('hidden');
     stopAlarmSound();
+
+    // Remove the dismissed alarm from the list
+    if (currentDisplayedAlarm) {
+        deleteAlarm(currentDisplayedAlarm.id);
+        currentDisplayedAlarm = null;
+    }
 }
 
 // Check alarms every second
