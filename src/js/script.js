@@ -319,7 +319,7 @@ function renderAlarms() {
     const alarms = getAlarms();
 
     if (alarms.length === 0) {
-        alarmsList.innerHTML = '<p class="no-alarms-text">No alarms set</p>';
+        alarmsList.innerHTML = '<p class="no-alarms-text">No reminders set</p>';
         return;
     }
 

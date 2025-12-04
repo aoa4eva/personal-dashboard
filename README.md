@@ -1,30 +1,17 @@
 # A simple bootstrap template for project quick starts 
 
 # What it is: 
-A simple boostrap starter template.
-
+A simple personal dashbaord that you can run from your local machine based on ![https://github.com/aoa4eva/nakai-ui](nakai-ui). 
 ![img.png](img.png)
-
-
-**Pros:** 
-1. It's LLM-friendly - the code can be edited relatively easily by an LLM. 
-2. You can easily replace the content with your own. 
-3. It can serve as a starting point for other projects. 
-
-Features: 
 
 # How to use: 
 1. Clone this repo
 2. Edit the files in the `src` folder 
-3. This is an html/css/js project, so you can edit it directly from your text editor or IDE. The template is simple enough to use without an LLM, but have fun and flex that creative muscle!
+3. This is an html/css/js project, so you can edit it directly from your text editor or IDE. The template is simple enough to use with or without an LLM, so have fun and flex that creative muscle!
 
-# What I learned for AI prompting:
-1. Aesthetic is important - so if you have a site that you're inspired by, tell Claude about it. 
-2. You can get decent results within the first 3 prompts if you are specific about your aesthetic and basic functionality. 
-3. Adding features isn't always a chore - small additions can be made without copying and pasting. 
-4. Localising your changes to a specific segment of the code is a good idea. 
-5. Version control is an even better idea. You already know to use version control. Always tag your 'stable' versions intuitively and make sure they're committed. 
-
+# Lessons for AI prompting:
+1. Target complete features to develop at a time. 
+2. You can definitely prompt in stages, but make sure you're clear about what you want to achieve, and that it can be developed independently of other features. 
 
 #Template Features (by Claude)
 
@@ -36,7 +23,14 @@ Features:
 ### User Customization:
 - Settings modal accessible via navigation
 - Name input field for personalized greetings
+- Alarm setup for custom reminder sounds 
+- Show/hide reminder widget
 - User preferences stored in browser localStorage
+- Setting for temperature units
+- Setting for city for weather data 
+- API token configuration for openweathermap.org
+- Show/hide weather widget by providing/removing city data
+
 
 ### Navigation:
 - Auto-hiding navigation bar that appears on hover
@@ -56,3 +50,5 @@ Features:
 - Auto-updating greeting (1-minute interval)
 - Keyboard support (Enter key) in settings modal
 - Click-outside-to-close functionality for mobile navbar
+- Voice support for adding reminders
+- Preview of default sound 
