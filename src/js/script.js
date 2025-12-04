@@ -194,6 +194,20 @@ function generateDefaultBeep() {
     return audioContext;
 }
 
+//Play preview sound (sample)
+function playPreviewSound(){
+    const customSound = localStorage.getItem('alarmSoundData');
+    if (!customSound) {
+       generateDefaultBeep();
+    }
+    else {
+      currentAlarmAudio = new Audio(customSound);
+       currentAlarmAudio.loop = true;
+       currentAlarmAudio.play().catch(error => {
+    })
+    }
+}
+
 // Play alarm sound (persistent, repeating)
 function playAlarmSound() {
     const customSound = localStorage.getItem('alarmSoundData');
@@ -937,7 +951,7 @@ function initSettings() {
 
     // Handle preview alarm sound
     previewAlarmSoundBtn.addEventListener('click', () => {
-        playAlarmSound();
+        playPreviewSound();
     });
 
     // Save settings
