@@ -292,6 +292,308 @@ function initNavbar() {
     });
 }
 
+// Drag and Drop functionality
+class DraggableWidget {
+    constructor(element, defaultPosition = null) {
+        this.element = element;
+        this.isDragging = false;
+        this.currentX = 0;
+        this.currentY = 0;
+        this.initialX = 0;
+        this.initialY = 0;
+        this.xOffset = 0;
+        this.yOffset = 0;
+        this.defaultPosition = defaultPosition;
+
+        this.setupDraggable();
+    }
+
+    setupDraggable() {
+        // Load saved position
+        const savedPosition = this.loadPosition();
+        if (savedPosition) {
+            this.element.style.left = savedPosition.x + 'px';
+            this.element.style.top = savedPosition.y + 'px';
+            this.xOffset = savedPosition.x;
+            this.yOffset = savedPosition.y;
+        } else if (this.defaultPosition) {
+            // Use provided default position
+            this.setPosition(this.defaultPosition.x, this.defaultPosition.y);
+        } else {
+            // Fallback to center
+            this.centerWidget();
+        }
+
+        // Mouse events
+        this.element.addEventListener('mousedown', this.dragStart.bind(this));
+        document.addEventListener('mousemove', this.drag.bind(this));
+        document.addEventListener('mouseup', this.dragEnd.bind(this));
+
+        // Touch events for mobile
+        this.element.addEventListener('touchstart', this.dragStart.bind(this), { passive: false });
+        document.addEventListener('touchmove', this.drag.bind(this), { passive: false });
+        document.addEventListener('touchend', this.dragEnd.bind(this));
+    }
+
+    setPosition(x, y) {
+        this.element.style.left = x + 'px';
+        this.element.style.top = y + 'px';
+        this.xOffset = x;
+        this.yOffset = y;
+    }
+
+    centerWidget() {
+        const container = document.querySelector('.main-container');
+        const containerRect = container.getBoundingClientRect();
+        const elementRect = this.element.getBoundingClientRect();
+
+        const centerX = (containerRect.width - elementRect.width) / 2;
+        const centerY = (containerRect.height - elementRect.height) / 2;
+
+        this.setPosition(centerX, centerY);
+    }
+
+    dragStart(e) {
+        const event = e.type === 'touchstart' ? e.touches[0] : e;
+
+        this.initialX = event.clientX - this.xOffset;
+        this.initialY = event.clientY - this.yOffset;
+
+        if (e.target === this.element || this.element.contains(e.target)) {
+            this.isDragging = true;
+            this.element.classList.add('dragging');
+            e.preventDefault();
+        }
+    }
+
+    drag(e) {
+        if (this.isDragging) {
+            e.preventDefault();
+
+            const event = e.type === 'touchmove' ? e.touches[0] : e;
+
+            this.currentX = event.clientX - this.initialX;
+            this.currentY = event.clientY - this.initialY;
+
+            // Keep widget within viewport bounds
+            const container = document.querySelector('.main-container');
+            const containerRect = container.getBoundingClientRect();
+            const elementRect = this.element.getBoundingClientRect();
+
+            this.currentX = Math.max(0, Math.min(this.currentX, containerRect.width - elementRect.width));
+            this.currentY = Math.max(0, Math.min(this.currentY, containerRect.height - elementRect.height));
+
+            this.xOffset = this.currentX;
+            this.yOffset = this.currentY;
+
+            this.setTranslate(this.currentX, this.currentY);
+        }
+    }
+
+    dragEnd(e) {
+        if (this.isDragging) {
+            this.initialX = this.currentX;
+            this.initialY = this.currentY;
+            this.isDragging = false;
+            this.element.classList.remove('dragging');
+
+            // Check for overlaps and adjust position
+            this.resolveOverlaps();
+
+            // Save position to localStorage
+            this.savePosition();
+        }
+    }
+
+    setTranslate(xPos, yPos) {
+        this.element.style.left = xPos + 'px';
+        this.element.style.top = yPos + 'px';
+    }
+
+    getRect() {
+        return this.element.getBoundingClientRect();
+    }
+
+    checkOverlap(otherWidget) {
+        const rect1 = this.getRect();
+        const rect2 = otherWidget.getRect();
+
+        return !(rect1.right < rect2.left ||
+                 rect1.left > rect2.right ||
+                 rect1.bottom < rect2.top ||
+                 rect1.top > rect2.bottom);
+    }
+
+    resolveOverlaps() {
+        const allWidgets = document.querySelectorAll('.draggable');
+        const container = document.querySelector('.main-container');
+        const containerRect = container.getBoundingClientRect();
+
+        let hasOverlap = true;
+        let attempts = 0;
+        const maxAttempts = 10;
+
+        while (hasOverlap && attempts < maxAttempts) {
+            hasOverlap = false;
+            attempts++;
+
+            allWidgets.forEach(otherElement => {
+                if (otherElement !== this.element && !otherElement.classList.contains('hidden')) {
+                    const rect1 = this.getRect();
+                    const rect2 = otherElement.getBoundingClientRect();
+
+                    if (this.checkOverlapRects(rect1, rect2)) {
+                        hasOverlap = true;
+
+                        // Calculate center points
+                        const center1X = rect1.left + rect1.width / 2;
+                        const center1Y = rect1.top + rect1.height / 2;
+                        const center2X = rect2.left + rect2.width / 2;
+                        const center2Y = rect2.top + rect2.height / 2;
+
+                        // Calculate direction to move
+                        const dx = center1X - center2X;
+                        const dy = center1Y - center2Y;
+
+                        // Calculate overlap amounts
+                        const overlapX = (rect1.width + rect2.width) / 2 - Math.abs(dx);
+                        const overlapY = (rect1.height + rect2.height) / 2 - Math.abs(dy);
+
+                        // Move in the direction of least overlap
+                        if (overlapX < overlapY) {
+                            // Move horizontally
+                            const moveX = dx > 0 ? overlapX + 10 : -(overlapX + 10);
+                            this.currentX += moveX;
+                        } else {
+                            // Move vertically
+                            const moveY = dy > 0 ? overlapY + 10 : -(overlapY + 10);
+                            this.currentY += moveY;
+                        }
+
+                        // Keep within bounds
+                        const elementRect = this.element.getBoundingClientRect();
+                        this.currentX = Math.max(0, Math.min(this.currentX, containerRect.width - elementRect.width));
+                        this.currentY = Math.max(0, Math.min(this.currentY, containerRect.height - elementRect.height));
+
+                        this.xOffset = this.currentX;
+                        this.yOffset = this.currentY;
+                        this.setTranslate(this.currentX, this.currentY);
+                    }
+                }
+            });
+        }
+    }
+
+    checkOverlapRects(rect1, rect2) {
+        return !(rect1.right < rect2.left ||
+                 rect1.left > rect2.right ||
+                 rect1.bottom < rect2.top ||
+                 rect1.top > rect2.bottom);
+    }
+
+    savePosition() {
+        const id = this.element.id || this.element.className.split(' ')[0];
+        const position = {
+            x: this.xOffset,
+            y: this.yOffset
+        };
+        localStorage.setItem(`widget-position-${id}`, JSON.stringify(position));
+    }
+
+    loadPosition() {
+        const id = this.element.id || this.element.className.split(' ')[0];
+        const saved = localStorage.getItem(`widget-position-${id}`);
+        return saved ? JSON.parse(saved) : null;
+    }
+}
+
+// Calculate ideal default positions for widgets
+function calculateDefaultPositions() {
+    const container = document.querySelector('.main-container');
+    const containerRect = container.getBoundingClientRect();
+
+    const timeSection = document.querySelector('.time-section');
+    const greetingSection = document.querySelector('.greeting-section');
+    const weatherWidget = document.getElementById('weather-widget');
+    const quoteSection = document.querySelector('.quote-section');
+
+    const positions = {};
+
+    // Get widget dimensions
+    const timeRect = timeSection ? timeSection.getBoundingClientRect() : { width: 0, height: 0 };
+    const greetingRect = greetingSection ? greetingSection.getBoundingClientRect() : { width: 0, height: 0 };
+    const weatherRect = weatherWidget && !weatherWidget.classList.contains('hidden') ?
+        weatherWidget.getBoundingClientRect() : { width: 0, height: 0 };
+    const quoteRect = quoteSection ? quoteSection.getBoundingClientRect() : { width: 0, height: 0 };
+
+    // Stack widgets vertically in center, mimicking the original flexbox layout
+    const spacing = 20; // Spacing between widgets
+
+    // Calculate total height of main content (greeting, time, weather if visible)
+    let mainContentHeight = greetingRect.height + timeRect.height + (2 * spacing);
+    if (weatherWidget && !weatherWidget.classList.contains('hidden')) {
+        mainContentHeight += weatherRect.height + spacing;
+    }
+
+    // Start Y position to center the main content block
+    let currentY = (containerRect.height - mainContentHeight - quoteRect.height - 60) / 2;
+
+    // Greeting section - first in vertical stack, horizontally centered
+    if (greetingSection) {
+        positions.greeting = {
+            x: (containerRect.width - greetingRect.width) / 2,
+            y: currentY
+        };
+        currentY += greetingRect.height + spacing;
+    }
+
+    // Time section - second, horizontally centered
+    if (timeSection) {
+        positions.time = {
+            x: (containerRect.width - timeRect.width) / 2,
+            y: currentY
+        };
+        currentY += timeRect.height + spacing;
+    }
+
+    // Weather widget - third, horizontally centered (keeping with natural flow)
+    if (weatherWidget && !weatherWidget.classList.contains('hidden')) {
+        positions.weather = {
+            x: (containerRect.width - weatherRect.width) / 2,
+            y: currentY
+        };
+    }
+
+    // Quote section - at bottom, horizontally centered
+    if (quoteSection) {
+        positions.quote = {
+            x: (containerRect.width - quoteRect.width) / 2,
+            y: containerRect.height - quoteRect.height - 60
+        };
+    }
+
+    return positions;
+}
+
+// Initialize draggable widgets
+function initDraggableWidgets() {
+    const positions = calculateDefaultPositions();
+
+    const widgets = [
+        { element: document.querySelector('.time-section'), key: 'time' },
+        { element: document.querySelector('.greeting-section'), key: 'greeting' },
+        { element: document.getElementById('weather-widget'), key: 'weather' },
+        { element: document.querySelector('.quote-section'), key: 'quote' }
+    ];
+
+    widgets.forEach(({ element, key }) => {
+        if (element) {
+            element.classList.add('draggable');
+            new DraggableWidget(element, positions[key]);
+        }
+    });
+}
+
 // Initialize everything
 function init() {
     updateTime();
@@ -301,6 +603,9 @@ function init() {
     initSettings();
     initNavbar();
     initWeather();
+
+    // Initialize draggable widgets after a short delay to ensure all elements are rendered
+    setTimeout(initDraggableWidgets, 100);
 }
 
 // Start when DOM is loaded
