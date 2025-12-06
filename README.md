@@ -1,7 +1,7 @@
 # A simple bootstrap template for project quick starts 
 
 # What it is: 
-A simple personal ddashboard that you can run from your local machine based on [nakai-ui](https://github.com/aoa4eva/nakai-ui)  
+A simple personal dashboard that you can run from your local machine based on [nakai-ui](https://github.com/aoa4eva/nakai-ui)  
 ![img.png](img.png)
 
 # How to use: 
