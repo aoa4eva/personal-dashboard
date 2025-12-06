@@ -13,7 +13,7 @@ A simple personal dashbaord that you can run from your local machine based on [n
 1. Target complete features to develop at a time. 
 2. You can definitely prompt in stages, but make sure you're clear about what you want to achieve, and that it can be developed independently of other features. 
 
-#Template Features (by Claude)
+# Template Features (by Claude)
 
 ### Display Components:
 - Real-time clock showing current time (24-hour format) and date
